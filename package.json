@@ -11,7 +11,7 @@
     "dependencies": {
         "@babel/runtime": "^7.21.5",
         "standardized-audio-context": "^25.3.47",
-        "timed-audio-buffer-source-node-audio-worklet-processor": "^1.0.5",
+        "timed-audio-buffer-source-node-audio-worklet-processor": "^1.0.6",
         "timing-object": "^3.1.56",
         "tslib": "^2.5.0"
     },
