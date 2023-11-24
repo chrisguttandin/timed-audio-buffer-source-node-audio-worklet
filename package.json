@@ -12,7 +12,7 @@
         "@babel/runtime": "^7.23.4",
         "standardized-audio-context": "^25.3.59",
         "timed-audio-buffer-source-node-audio-worklet-processor": "^1.0.12",
-        "timing-object": "^3.1.67",
+        "timing-object": "^3.1.68",
         "tslib": "^2.6.2"
     },
     "description": "This module provides a loader for the TimedAudioBufferSourceNodeAudioWorkletProcessor and the corresponding TimedAudioBufferSourceNodeAudioWorkletNode.",
