@@ -50,7 +50,7 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
             numberOfInputs: 0,
             numberOfOutputs: 1,
             outputChannelCount: [buffer?.numberOfChannels ?? 1],
-            pocessorOptions: {
+            processorOptions: {
                 buffer:
                     buffer instanceof AudioBuffer
                         ? Array.from({ length: buffer.numberOfChannels }, (_, channel) => buffer.getChannelData(channel))
