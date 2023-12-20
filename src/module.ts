@@ -45,7 +45,6 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
         context,
         'timed-audio-buffer-source-node-audio-worklet-processor',
         {
-            ...options,
             numberOfInputs: 0,
             numberOfOutputs: 1,
             outputChannelCount: [buffer?.numberOfChannels ?? 1],
