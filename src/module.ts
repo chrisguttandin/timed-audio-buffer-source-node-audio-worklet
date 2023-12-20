@@ -40,6 +40,11 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
         : TNativeTimedAudioBufferSourceNodeAudioWorkletNode;
 
     const { buffer = null, timingObject = null } = options;
+
+    if (buffer instanceof AudioBuffer && buffer.sampleRate !== context.sampleRate) {
+        throw new TypeError('The AudioBuffer must have the same sampleRate as the AudioContext.');
+    }
+
     const { position = 0, timestamp = 0 } = timingObject?.query() ?? {};
     const audioWorkletNode: TAnyAudioWorkletNode = new (<any>audioWorkletNodeConstructor)(
         context,
