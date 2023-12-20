@@ -1,5 +1,4 @@
 import {
-    AudioBuffer,
     IAudioWorkletNode,
     TAudioWorkletNodeConstructor,
     TContext,
