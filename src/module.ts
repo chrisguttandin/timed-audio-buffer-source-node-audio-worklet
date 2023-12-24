@@ -6,6 +6,8 @@ import {
     TNativeAudioWorkletNodeConstructor,
     TNativeContext
 } from 'standardized-audio-context';
+import { createConvertToContextFrame } from './factories/convert-to-context-frame';
+import { createPerformance } from './factories/performance';
 import { ITimedAudioBufferSourceNodeAudioWorkletNode } from './interfaces';
 import { TAnyTimedAudioBufferSourceNodeAudioWorkletNodeOptions, TNativeTimedAudioBufferSourceNodeAudioWorkletNode } from './types';
 import { worklet } from './worklet/worklet';
@@ -28,6 +30,8 @@ export const addTimedAudioBufferSourceNodeAudioWorkletModule = async (addAudioWo
         URL.revokeObjectURL(url);
     }
 };
+
+const convertToContextFrame = createConvertToContextFrame(createPerformance());
 
 export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TContext | TNativeContext>(
     audioWorkletNodeConstructor: T extends TContext ? TAudioWorkletNodeConstructor : TNativeAudioWorkletNodeConstructor,
@@ -59,7 +63,7 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
                         ? Array.from({ length: buffer.numberOfChannels }, (_, channel) => buffer.getChannelData(channel))
                         : null,
                 position,
-                timestamp
+                timestamp: convertToContextFrame(context, timestamp)
             }
         }
     );
