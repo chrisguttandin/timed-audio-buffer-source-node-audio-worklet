@@ -10,6 +10,7 @@ describe('scheduleAudioBufferSourceNode', () => {
     let scheduleAudioBufferSourceNode;
     let timestamp;
     let timingObject;
+    let velocity;
 
     beforeEach(() => {
         audioBufferSourceNode = { addEventListener: stub(), buffer: null, connect: stub(), start: stub() };
@@ -19,12 +20,13 @@ describe('scheduleAudioBufferSourceNode', () => {
         createAudioBufferSourceNode = stub();
         timestamp = Symbol('timestamp');
         timingObject = { query: stub() };
+        velocity = 3;
 
         scheduleAudioBufferSourceNode = createScheduleAudioBufferSourceNode(convertToContextFrame);
 
         convertToContextFrame.returns(2);
         createAudioBufferSourceNode.returns(audioBufferSourceNode);
-        timingObject.query.returns({ position: 1, timestamp });
+        timingObject.query.returns({ position: 1, timestamp, velocity });
     });
 
     it('should call createAudioBufferSourceNode() with the given context', () => {
@@ -50,11 +52,11 @@ describe('scheduleAudioBufferSourceNode', () => {
 
         expect(audioBufferSourceNode.buffer).to.be.an.instanceOf(AudioBuffer);
 
-        expect(audioBufferSourceNode.buffer.length).to.equal(2);
+        expect(audioBufferSourceNode.buffer.length).to.equal(3);
         expect(audioBufferSourceNode.buffer.numberOfChannels).to.equal(1);
         expect(audioBufferSourceNode.buffer.sampleRate).to.equal(context.sampleRate);
 
-        expect(audioBufferSourceNode.buffer.getChannelData(0)).to.deep.equal(new Float32Array([1, 2]));
+        expect(audioBufferSourceNode.buffer.getChannelData(0)).to.deep.equal(new Float32Array([1, 2, 3]));
     });
 
     it('should call addEventListener() on the AudioBufferSourceNode', () => {

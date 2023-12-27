@@ -59,7 +59,7 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
 
     let { timingObject = null } = options;
 
-    const { position = 0, timestamp = 0 } = timingObject?.query() ?? {};
+    const { position = 0, timestamp = 0, velocity = 0 } = timingObject?.query() ?? {};
     const audioWorkletNode: TAnyAudioWorkletNode = new (<any>audioWorkletNodeConstructor)(
         context,
         'timed-audio-buffer-source-node-audio-worklet-processor',
@@ -73,7 +73,8 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
                         ? Array.from({ length: buffer.numberOfChannels }, (_, channel) => buffer.getChannelData(channel))
                         : null,
                 position,
-                timestamp: convertToContextFrame(context, timestamp)
+                timestamp: convertToContextFrame(context, timestamp),
+                velocity
             }
         }
     );

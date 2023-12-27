@@ -19,11 +19,11 @@ export const createScheduleAudioBufferSourceNode =
             : (context: TNativeContext) => TNativeAudioBufferSourceNode,
         timingObject: ITimingObject
     ): Promise<void> => {
-        const audioBuffer = new AudioBuffer({ length: 2, sampleRate: context.sampleRate });
+        const audioBuffer = new AudioBuffer({ length: 3, sampleRate: context.sampleRate });
         const audioBufferSourceNode = createAudioBufferSourceNode(<any>context);
-        const { position, timestamp } = timingObject.query();
+        const { position, timestamp, velocity } = timingObject.query();
 
-        audioBuffer.copyToChannel(new Float32Array([position, convertToContextFrame(context, timestamp)]), 0);
+        audioBuffer.copyToChannel(new Float32Array([position, convertToContextFrame(context, timestamp), velocity]), 0);
 
         audioBufferSourceNode.buffer = audioBuffer;
 
