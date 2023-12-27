@@ -1,4 +1,4 @@
-import { AudioBuffer, AudioContext, AudioWorkletNode } from 'standardized-audio-context';
+import { AudioBuffer, AudioBufferSourceNode, AudioContext, AudioWorkletNode } from 'standardized-audio-context';
 import { addTimedAudioBufferSourceNodeAudioWorkletModule, createTimedAudioBufferSourceNodeAudioWorkletNode } from '../../src/module';
 import { spy } from 'sinon';
 
@@ -28,6 +28,7 @@ describe('module', () => {
                 ],
                 audioWorkletNodeConstructor: window.AudioWorkletNode,
                 createAddAudioWorkletModule: (context) => (url) => context.audioWorklet.addModule(url),
+                createAudioBufferSourceNode: (context) => context.createBufferSource(),
                 createContext: () => new window.AudioContext()
             },
             'a standardized AudioContext': {
@@ -37,6 +38,7 @@ describe('module', () => {
                 ],
                 audioWorkletNodeConstructor: AudioWorkletNode,
                 createAddAudioWorkletModule: (context) => (url) => context.audioWorklet.addModule(url),
+                createAudioBufferSourceNode: (context) => new AudioBufferSourceNode(context),
                 createContext: () => new AudioContext()
             }
         };
@@ -47,7 +49,13 @@ describe('module', () => {
 
         for (const [
             audioContextName,
-            { audioBufferConstructors, audioWorkletNodeConstructor, createAddAudioWorkletModule, createContext }
+            {
+                audioBufferConstructors,
+                audioWorkletNodeConstructor,
+                createAddAudioWorkletModule,
+                createAudioBufferSourceNode,
+                createContext
+            }
         ] of Object.entries(testCases)) {
             describe(`with ${audioContextName}`, () => {
                 let context;
@@ -66,54 +74,111 @@ describe('module', () => {
 
                 describe('with valid options', () => {
                     for (const [audioBufferName, audioBufferConstructor] of [['no AudioBuffer', null], ...audioBufferConstructors]) {
-                        describe(`with ${audioBufferName}`, () => {
-                            let timedAudioBufferSourceNodeAudioWorkletNode;
+                        for (const [timingObjectName, withTimingObject] of [
+                            ['a TimingObject', true],
+                            ['no TimingObject', false]
+                        ]) {
+                            describe(`with ${audioBufferName} and ${timingObjectName}`, () => {
+                                let timedAudioBufferSourceNodeAudioWorkletNode;
+                                let timingObject;
 
-                            beforeEach(() => {
-                                timedAudioBufferSourceNodeAudioWorkletNode =
-                                    audioBufferConstructor === null
-                                        ? createTimedAudioBufferSourceNodeAudioWorkletNode(audioWorkletNodeConstructor, context)
-                                        : createTimedAudioBufferSourceNodeAudioWorkletNode(audioWorkletNodeConstructor, context, {
-                                              // eslint-disable-next-line new-cap
-                                              buffer: new audioBufferConstructor({
-                                                  length: 1,
-                                                  sampleRate: context.sampleRate
-                                              })
-                                          });
-                            });
+                                beforeEach(() => {
+                                    timingObject = withTimingObject
+                                        ? { addEventListener: spy(), query: spy(), removeEventListener: spy() }
+                                        : null;
+                                    timedAudioBufferSourceNodeAudioWorkletNode =
+                                        audioBufferConstructor === null && timingObject === null
+                                            ? createTimedAudioBufferSourceNodeAudioWorkletNode(
+                                                  audioWorkletNodeConstructor,
+                                                  context,
+                                                  createAudioBufferSourceNode
+                                              )
+                                            : createTimedAudioBufferSourceNodeAudioWorkletNode(
+                                                  audioWorkletNodeConstructor,
+                                                  context,
+                                                  createAudioBufferSourceNode,
+                                                  {
+                                                      ...(audioBufferConstructor === null
+                                                          ? null
+                                                          : {
+                                                                // eslint-disable-next-line new-cap
+                                                                buffer: new audioBufferConstructor({
+                                                                    length: 1,
+                                                                    sampleRate: context.sampleRate
+                                                                })
+                                                            }),
+                                                      ...(timingObject === null ? null : { timingObject })
+                                                  }
+                                              );
+                                });
 
-                            it('should return an instance of the EventTarget interface', () => {
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.addEventListener).to.be.a('function');
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.dispatchEvent).to.be.a('function');
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.removeEventListener).to.be.a('function');
-                            });
+                                it('should return an instance of the EventTarget interface', () => {
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.addEventListener).to.be.a('function');
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.dispatchEvent).to.be.a('function');
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.removeEventListener).to.be.a('function');
+                                });
 
-                            it('should return an instance of the AudioNode interface', () => {
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.channelCount).to.equal(2);
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.channelCountMode).to.equal(
-                                    audioContextName.includes('standardized') ? 'explicit' : 'max'
-                                );
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.channelInterpretation).to.equal('speakers');
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.connect).to.be.a('function');
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.context).to.be.an.instanceOf(context.constructor);
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.disconnect).to.be.a('function');
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.numberOfInputs).to.equal(0);
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.numberOfOutputs).to.equal(1);
-                            });
+                                it('should return an instance of the AudioNode interface', () => {
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.channelCount).to.equal(2);
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.channelCountMode).to.equal(
+                                        audioContextName.includes('standardized') ? 'explicit' : 'max'
+                                    );
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.channelInterpretation).to.equal('speakers');
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.connect).to.be.a('function');
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.context).to.be.an.instanceOf(context.constructor);
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.disconnect).to.be.a('function');
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.numberOfInputs).to.equal(1);
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.numberOfOutputs).to.equal(1);
+                                });
 
-                            it('should return an instance of the AudioWorkletNode interface', () => {
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.onprocessorerror).to.be.null;
-                                expect(timedAudioBufferSourceNodeAudioWorkletNode.parameters).not.to.be.undefined;
-                            });
+                                it('should return an instance of the AudioWorkletNode interface', () => {
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.onprocessorerror).to.be.null;
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.parameters).not.to.be.undefined;
+                                });
 
-                            describe('port', () => {
-                                it('should throw an error', () => {
-                                    expect(() => {
-                                        timedAudioBufferSourceNodeAudioWorkletNode.port;
-                                    }).to.throw(Error, "The port of a TimedAudioBufferSourceNodeAudioWorkletNode can't be accessed.");
+                                it('should return an instance of the TimedAudioBufferSourceNodeAudioWorkletNode interface', () => {
+                                    expect(timedAudioBufferSourceNodeAudioWorkletNode.timingObject).to.equal(timingObject);
+                                });
+
+                                describe('port', () => {
+                                    it('should throw an error', () => {
+                                        expect(() => {
+                                            timedAudioBufferSourceNodeAudioWorkletNode.port;
+                                        }).to.throw(Error, "The port of a TimedAudioBufferSourceNodeAudioWorkletNode can't be accessed.");
+                                    });
+                                });
+
+                                describe('timingObject', () => {
+                                    it('should be assignable to null', () => {
+                                        timedAudioBufferSourceNodeAudioWorkletNode.timingObject = null;
+
+                                        expect(timedAudioBufferSourceNodeAudioWorkletNode.timingObject).to.be.null;
+                                    });
+
+                                    if (withTimingObject) {
+                                        it('should call addEventListener() on the given timingObject', () => {
+                                            const listener = timingObject.addEventListener.getCall(0).args[1];
+
+                                            expect(timingObject.addEventListener).to.have.been.calledOnceWithExactly('change', listener);
+                                        });
+
+                                        it('should call removeEventListener() on the given timingObject', () => {
+                                            const listener = timingObject.addEventListener.getCall(0).args[1];
+
+                                            timedAudioBufferSourceNodeAudioWorkletNode.timingObject = null;
+
+                                            expect(timingObject.removeEventListener).to.have.been.calledOnceWithExactly('change', listener);
+                                        });
+                                    }
+
+                                    it('should not be assignable to a TimingObject', () => {
+                                        expect(() => {
+                                            timedAudioBufferSourceNodeAudioWorkletNode.timingObject = Symbol('TimingObject');
+                                        }).to.throw(TypeError, 'A TimingObject can only be set in the constructor.');
+                                    });
                                 });
                             });
-                        });
+                        }
                     }
                 });
 
@@ -123,13 +188,18 @@ describe('module', () => {
                             describe('with a different sampleRate than the context', () => {
                                 it('should throw a TypeError', () => {
                                     expect(() => {
-                                        createTimedAudioBufferSourceNodeAudioWorkletNode(audioWorkletNodeConstructor, context, {
-                                            // eslint-disable-next-line new-cap
-                                            buffer: new audioBufferConstructor({
-                                                length: 1,
-                                                sampleRate: context.sampleRate === 48000 ? 44100 : 48000
-                                            })
-                                        });
+                                        createTimedAudioBufferSourceNodeAudioWorkletNode(
+                                            audioWorkletNodeConstructor,
+                                            context,
+                                            createAudioBufferSourceNode,
+                                            {
+                                                // eslint-disable-next-line new-cap
+                                                buffer: new audioBufferConstructor({
+                                                    length: 1,
+                                                    sampleRate: context.sampleRate === 48000 ? 44100 : 48000
+                                                })
+                                            }
+                                        );
                                     }).to.throw(TypeError, 'The AudioBuffer must have the same sampleRate as the AudioContext.');
                                 });
                             });

@@ -1,13 +1,17 @@
 import {
+    IAudioBufferSourceNode,
     IAudioWorkletNode,
     TAudioWorkletNodeConstructor,
     TContext,
+    TNativeAudioBufferSourceNode,
     TNativeAudioWorkletNode,
     TNativeAudioWorkletNodeConstructor,
     TNativeContext
 } from 'standardized-audio-context';
 import { createConvertToContextFrame } from './factories/convert-to-context-frame';
 import { createPerformance } from './factories/performance';
+import { createScheduleAudioBufferSourceNode } from './factories/schedule-audio-buffer-source-node';
+import { createSubscribeToTimingObject } from './factories/subscribe-to-timing-object';
 import { ITimedAudioBufferSourceNodeAudioWorkletNode } from './interfaces';
 import { TAnyTimedAudioBufferSourceNodeAudioWorkletNodeOptions, TNativeTimedAudioBufferSourceNodeAudioWorkletNode } from './types';
 import { worklet } from './worklet/worklet';
@@ -32,10 +36,14 @@ export const addTimedAudioBufferSourceNodeAudioWorkletModule = async (addAudioWo
 };
 
 const convertToContextFrame = createConvertToContextFrame(createPerformance());
+const subscribeToTimingObject = createSubscribeToTimingObject(createScheduleAudioBufferSourceNode(convertToContextFrame));
 
 export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TContext | TNativeContext>(
     audioWorkletNodeConstructor: T extends TContext ? TAudioWorkletNodeConstructor : TNativeAudioWorkletNodeConstructor,
     context: T,
+    createAudioBufferSourceNode: T extends TContext
+        ? (context: TContext) => IAudioBufferSourceNode<TContext>
+        : (context: TNativeContext) => TNativeAudioBufferSourceNode,
     options: Partial<TAnyTimedAudioBufferSourceNodeAudioWorkletNodeOptions<T>> = {}
 ): T extends TContext ? ITimedAudioBufferSourceNodeAudioWorkletNode<T> : TNativeTimedAudioBufferSourceNodeAudioWorkletNode {
     type TAnyAudioWorkletNode = T extends TContext ? IAudioWorkletNode<T> : TNativeAudioWorkletNode;
@@ -43,18 +51,20 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
         ? ITimedAudioBufferSourceNodeAudioWorkletNode<T>
         : TNativeTimedAudioBufferSourceNodeAudioWorkletNode;
 
-    const { buffer = null, timingObject = null } = options;
+    const { buffer = null } = options;
 
     if (buffer instanceof AudioBuffer && buffer.sampleRate !== context.sampleRate) {
         throw new TypeError('The AudioBuffer must have the same sampleRate as the AudioContext.');
     }
+
+    let { timingObject = null } = options;
 
     const { position = 0, timestamp = 0 } = timingObject?.query() ?? {};
     const audioWorkletNode: TAnyAudioWorkletNode = new (<any>audioWorkletNodeConstructor)(
         context,
         'timed-audio-buffer-source-node-audio-worklet-processor',
         {
-            numberOfInputs: 0,
+            numberOfInputs: 1,
             numberOfOutputs: 1,
             outputChannelCount: [buffer?.numberOfChannels ?? 1],
             processorOptions: {
@@ -68,13 +78,33 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
         }
     );
 
+    let removeListener: null | (() => void) = null;
+
     Object.defineProperties(audioWorkletNode, {
         port: {
             get(): TAnyTimedAudioBufferSourceNodeAudioWorkletNode['port'] {
                 throw new Error("The port of a TimedAudioBufferSourceNodeAudioWorkletNode can't be accessed.");
             }
+        },
+        timingObject: {
+            get: () => timingObject,
+            set: (value: TAnyTimedAudioBufferSourceNodeAudioWorkletNode['timingObject']) => {
+                removeListener?.();
+
+                removeListener = null;
+
+                if (value === null) {
+                    timingObject = value;
+                } else {
+                    throw new TypeError('A TimingObject can only be set in the constructor.');
+                }
+            }
         }
     });
+
+    if (timingObject !== null) {
+        removeListener = subscribeToTimingObject(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
+    }
 
     return <TAnyTimedAudioBufferSourceNodeAudioWorkletNode>audioWorkletNode;
 }
