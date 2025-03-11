@@ -9,7 +9,7 @@
         }
     },
     "dependencies": {
-        "@babel/runtime": "^7.26.9",
+        "@babel/runtime": "^7.26.10",
         "standardized-audio-context": "^25.3.77",
         "timed-audio-buffer-source-node-audio-worklet-processor": "^2.1.15",
         "timing-object": "^3.1.88",
