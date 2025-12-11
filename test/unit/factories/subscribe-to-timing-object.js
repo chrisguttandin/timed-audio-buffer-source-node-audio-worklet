@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import { spy, stub } from 'sinon';
 import { createSubscribeToTimingObject } from '../../../src/factories/subscribe-to-timing-object';
 

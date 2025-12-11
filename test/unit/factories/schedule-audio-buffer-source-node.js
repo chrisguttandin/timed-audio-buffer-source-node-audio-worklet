@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createScheduleAudioBufferSourceNode } from '../../../src/factories/schedule-audio-buffer-source-node';
 import { stub } from 'sinon';
 
