@@ -44,10 +44,6 @@ describe('module', () => {
             }
         };
 
-        if (window.AudioWorkletNode === undefined) {
-            delete testCases['with a native AudioContext'];
-        }
-
         for (const [
             audioContextName,
             {
