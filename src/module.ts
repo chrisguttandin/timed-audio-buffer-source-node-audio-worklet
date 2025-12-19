@@ -13,7 +13,12 @@ import { createPerformance } from './factories/performance';
 import { createScheduleAudioBufferSourceNode } from './factories/schedule-audio-buffer-source-node';
 import { createSubscribeToTimingObject } from './factories/subscribe-to-timing-object';
 import { ITimedAudioBufferSourceNodeAudioWorkletNode } from './interfaces';
-import { TAnyTimedAudioBufferSourceNodeAudioWorkletNodeOptions, TNativeTimedAudioBufferSourceNodeAudioWorkletNode } from './types';
+import {
+    TAnyAudioWorkletNodeOptions,
+    TAnyTimedAudioBufferSourceNodeAudioWorkletNodeOptions,
+    TFixedOptions,
+    TNativeTimedAudioBufferSourceNodeAudioWorkletNode
+} from './types';
 import { worklet } from './worklet/worklet';
 
 /*
@@ -60,22 +65,26 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
     let { timingObject = null } = options;
 
     const { position = 0, timestamp = 0, velocity = 0 } = timingObject?.query() ?? {};
+    const fixedOptions: Required<Pick<TAnyAudioWorkletNodeOptions<T>, TFixedOptions>> = {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        outputChannelCount: [buffer?.numberOfChannels ?? 1],
+        processorOptions: {
+            buffer:
+                buffer instanceof AudioBuffer
+                    ? Array.from({ length: buffer.numberOfChannels }, (_, channel) => buffer.getChannelData(channel))
+                    : null,
+            position,
+            timestamp: convertToContextFrame(context, timestamp),
+            velocity
+        }
+    };
     const audioWorkletNode: TAnyAudioWorkletNode = new (<any>audioWorkletNodeConstructor)(
         context,
         'timed-audio-buffer-source-node-audio-worklet-processor',
         {
-            numberOfInputs: 1,
-            numberOfOutputs: 1,
-            outputChannelCount: [buffer?.numberOfChannels ?? 1],
-            processorOptions: {
-                buffer:
-                    buffer instanceof AudioBuffer
-                        ? Array.from({ length: buffer.numberOfChannels }, (_, channel) => buffer.getChannelData(channel))
-                        : null,
-                position,
-                timestamp: convertToContextFrame(context, timestamp),
-                velocity
-            }
+            ...options,
+            ...fixedOptions
         }
     );
 
