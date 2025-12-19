@@ -2,8 +2,8 @@ import { IAudioBuffer, IAudioWorkletNodeOptions } from 'standardized-audio-conte
 import { ITimingObject } from 'timing-object';
 import { TFixedOptions } from './fixed-options';
 
-export type TTimedAudioBufferSourceNodeAudioWorkletNodeOptions = Omit<IAudioWorkletNodeOptions, TFixedOptions> & {
-    buffer: IAudioBuffer;
+export type TTimedAudioBufferSourceNodeAudioWorkletNodeOptions = Partial<Omit<IAudioWorkletNodeOptions, TFixedOptions>> & {
+    buffer?: IAudioBuffer;
 
-    timingObject: ITimingObject;
+    timingObject?: ITimingObject;
 };

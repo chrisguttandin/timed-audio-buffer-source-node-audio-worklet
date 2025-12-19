@@ -2,8 +2,8 @@ import { TNativeAudioBuffer, TNativeAudioWorkletNodeOptions } from 'standardized
 import { ITimingObject } from 'timing-object';
 import { TFixedOptions } from './fixed-options';
 
-export type TNativeTimedAudioBufferSourceNodeAudioWorkletNodeOptions = Omit<TNativeAudioWorkletNodeOptions, TFixedOptions> & {
-    buffer: TNativeAudioBuffer;
+export type TNativeTimedAudioBufferSourceNodeAudioWorkletNodeOptions = Partial<Omit<TNativeAudioWorkletNodeOptions, TFixedOptions>> & {
+    buffer?: TNativeAudioBuffer;
 
-    timingObject: ITimingObject;
+    timingObject?: ITimingObject;
 };

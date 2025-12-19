@@ -49,20 +49,18 @@ export function createTimedAudioBufferSourceNodeAudioWorkletNode<T extends TCont
     createAudioBufferSourceNode: T extends TContext
         ? (context: TContext) => IAudioBufferSourceNode<TContext>
         : (context: TNativeContext) => TNativeAudioBufferSourceNode,
-    options: Partial<TAnyTimedAudioBufferSourceNodeAudioWorkletNodeOptions<T>> = {}
+    { buffer, timingObject: initialTimingObject, ...options }: TAnyTimedAudioBufferSourceNodeAudioWorkletNodeOptions<T> = {}
 ): T extends TContext ? ITimedAudioBufferSourceNodeAudioWorkletNode<T> : TNativeTimedAudioBufferSourceNodeAudioWorkletNode {
     type TAnyAudioWorkletNode = T extends TContext ? IAudioWorkletNode<T> : TNativeAudioWorkletNode;
     type TAnyTimedAudioBufferSourceNodeAudioWorkletNode = T extends TContext
         ? ITimedAudioBufferSourceNodeAudioWorkletNode<T>
         : TNativeTimedAudioBufferSourceNodeAudioWorkletNode;
 
-    const { buffer = null } = options;
-
     if (buffer instanceof AudioBuffer && buffer.sampleRate !== context.sampleRate) {
         throw new TypeError('The AudioBuffer must have the same sampleRate as the AudioContext.');
     }
 
-    let { timingObject = null } = options;
+    let timingObject = initialTimingObject ?? null;
 
     const { position = 0, timestamp = 0, velocity = 0 } = timingObject?.query() ?? {};
     const fixedOptions: Required<Pick<TAnyAudioWorkletNodeOptions<T>, TFixedOptions>> = {
