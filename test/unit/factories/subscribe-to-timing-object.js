@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { spy, stub } from 'sinon';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSubscribeToTimingObject } from '../../../src/factories/subscribe-to-timing-object';
 
 describe('subscribeToTimingObject', () => {
@@ -14,29 +13,29 @@ describe('subscribeToTimingObject', () => {
         audioWorkletNode = Symbol('audioWorkletNode');
         context = Symbol('context');
         createAudioBufferSourceNode = Symbol('createAudioBufferSourceNode');
-        scheduleAudioBufferSourceNode = stub();
-        timingObject = { addEventListener: spy(), removeEventListener: spy() };
+        scheduleAudioBufferSourceNode = vi.fn();
+        timingObject = { addEventListener: vi.fn(), removeEventListener: vi.fn() };
 
         subscribeToTimingObject = createSubscribeToTimingObject(scheduleAudioBufferSourceNode);
 
-        scheduleAudioBufferSourceNode.returns(Promise.resolve());
+        scheduleAudioBufferSourceNode.mockReturnValue(Promise.resolve());
     });
 
     it('should call addEventListener() on the given timingObject', () => {
         subscribeToTimingObject(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-        const listener = timingObject.addEventListener.getCall(0).args[1];
+        const listener = timingObject.addEventListener.mock.calls[0][1];
 
-        expect(timingObject.addEventListener).to.have.been.calledOnceWithExactly('change', listener);
+        expect(timingObject.addEventListener).to.have.been.calledOnceWith('change', listener);
     });
 
     it('should return a function which calls removeEventListener() on the given timingObject', () => {
         const unsubscribe = subscribeToTimingObject(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
-        const listener = timingObject.addEventListener.getCall(0).args[1];
+        const listener = timingObject.addEventListener.mock.calls[0][1];
 
         unsubscribe();
 
-        expect(timingObject.removeEventListener).to.have.been.calledOnceWithExactly('change', listener);
+        expect(timingObject.removeEventListener).to.have.been.calledOnceWith('change', listener);
     });
 
     describe('with a single event', () => {
@@ -45,13 +44,13 @@ describe('subscribeToTimingObject', () => {
         beforeEach(() => {
             subscribeToTimingObject(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-            listener = timingObject.addEventListener.getCall(0).args[1];
+            listener = timingObject.addEventListener.mock.calls[0][1];
         });
 
         it('should call scheduleAudioBufferSourceNode() with the given arguments', () => {
             listener();
 
-            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWithExactly(
+            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWith(
                 audioWorkletNode,
                 context,
                 createAudioBufferSourceNode,
@@ -66,7 +65,7 @@ describe('subscribeToTimingObject', () => {
         beforeEach(() => {
             subscribeToTimingObject(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-            listener = timingObject.addEventListener.getCall(0).args[1];
+            listener = timingObject.addEventListener.mock.calls[0][1];
         });
 
         it('should call scheduleAudioBufferSourceNode() with the given arguments in sequence', async () => {
@@ -76,12 +75,12 @@ describe('subscribeToTimingObject', () => {
                 resolvePromise = resolve;
             });
 
-            scheduleAudioBufferSourceNode.onFirstCall().returns(promise);
+            scheduleAudioBufferSourceNode.mockReturnValueOnce(promise);
 
             listener();
             listener();
 
-            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWithExactly(
+            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWith(
                 audioWorkletNode,
                 context,
                 createAudioBufferSourceNode,
@@ -98,7 +97,7 @@ describe('subscribeToTimingObject', () => {
 
             await Promise.resolve();
 
-            expect(scheduleAudioBufferSourceNode).to.have.been.calledTwice.and.calledWithExactly(
+            expect(scheduleAudioBufferSourceNode).to.have.been.calledTwice.and.calledWith(
                 audioWorkletNode,
                 context,
                 createAudioBufferSourceNode,
@@ -113,13 +112,13 @@ describe('subscribeToTimingObject', () => {
         beforeEach(() => {
             subscribeToTimingObject(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-            listener = timingObject.addEventListener.getCall(0).args[1];
+            listener = timingObject.addEventListener.mock.calls[0][1];
         });
 
         it('should call scheduleAudioBufferSourceNode() with the given arguments in sequence', async () => {
             listener();
 
-            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWithExactly(
+            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWith(
                 audioWorkletNode,
                 context,
                 createAudioBufferSourceNode,
@@ -132,7 +131,7 @@ describe('subscribeToTimingObject', () => {
 
             listener();
 
-            expect(scheduleAudioBufferSourceNode).to.have.been.calledTwice.and.calledWithExactly(
+            expect(scheduleAudioBufferSourceNode).to.have.been.calledTwice.and.calledWith(
                 audioWorkletNode,
                 context,
                 createAudioBufferSourceNode,
@@ -147,7 +146,7 @@ describe('subscribeToTimingObject', () => {
         beforeEach(() => {
             subscribeToTimingObject(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-            listener = timingObject.addEventListener.getCall(0).args[1];
+            listener = timingObject.addEventListener.mock.calls[0][1];
         });
 
         it('should call scheduleAudioBufferSourceNode() with the given arguments only twice', async () => {
@@ -161,14 +160,14 @@ describe('subscribeToTimingObject', () => {
                 resolveSecondPromise = resolve;
             });
 
-            scheduleAudioBufferSourceNode.onFirstCall().returns(firstPromise);
-            scheduleAudioBufferSourceNode.onSecondCall().returns(secondPromise);
+            scheduleAudioBufferSourceNode.mockReturnValueOnce(firstPromise);
+            scheduleAudioBufferSourceNode.mockReturnValueOnce(secondPromise);
 
             listener();
             listener();
             listener();
 
-            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWithExactly(
+            expect(scheduleAudioBufferSourceNode).to.have.been.calledOnceWith(
                 audioWorkletNode,
                 context,
                 createAudioBufferSourceNode,
@@ -185,7 +184,7 @@ describe('subscribeToTimingObject', () => {
 
             await Promise.resolve();
 
-            expect(scheduleAudioBufferSourceNode).to.have.been.calledTwice.and.calledWithExactly(
+            expect(scheduleAudioBufferSourceNode).to.have.been.calledTwice.and.calledWith(
                 audioWorkletNode,
                 context,
                 createAudioBufferSourceNode,

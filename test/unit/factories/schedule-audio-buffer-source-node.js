@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createScheduleAudioBufferSourceNode } from '../../../src/factories/schedule-audio-buffer-source-node';
-import { stub } from 'sinon';
 
 describe('scheduleAudioBufferSourceNode', () => {
     let audioBufferSourceNode;
@@ -14,38 +13,38 @@ describe('scheduleAudioBufferSourceNode', () => {
     let velocity;
 
     beforeEach(() => {
-        audioBufferSourceNode = { addEventListener: stub(), buffer: null, connect: stub(), start: stub() };
+        audioBufferSourceNode = { addEventListener: vi.fn(), buffer: null, connect: vi.fn(), start: vi.fn() };
         audioWorkletNode = Symbol('audioWorkletNode');
         context = { sampleRate: 48000 };
-        convertToContextFrame = stub();
-        createAudioBufferSourceNode = stub();
+        convertToContextFrame = vi.fn();
+        createAudioBufferSourceNode = vi.fn();
         timestamp = Symbol('timestamp');
-        timingObject = { query: stub() };
+        timingObject = { query: vi.fn() };
         velocity = 3;
 
         scheduleAudioBufferSourceNode = createScheduleAudioBufferSourceNode(convertToContextFrame);
 
-        convertToContextFrame.returns(2);
-        createAudioBufferSourceNode.returns(audioBufferSourceNode);
-        timingObject.query.returns({ position: 1, timestamp, velocity });
+        convertToContextFrame.mockReturnValue(2);
+        createAudioBufferSourceNode.mockReturnValue(audioBufferSourceNode);
+        timingObject.query.mockReturnValue({ position: 1, timestamp, velocity });
     });
 
     it('should call createAudioBufferSourceNode() with the given context', () => {
         scheduleAudioBufferSourceNode(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-        expect(createAudioBufferSourceNode).to.have.been.calledOnceWithExactly(context);
+        expect(createAudioBufferSourceNode).to.have.been.calledOnceWith(context);
     });
 
     it('should call query() on the given timingObject', () => {
         scheduleAudioBufferSourceNode(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-        expect(timingObject.query).to.have.been.calledOnceWithExactly();
+        expect(timingObject.query).to.have.been.calledOnceWith();
     });
 
     it('should call convertToContextFrame() with the given context and the timestamp returned by timingObject.query()', () => {
         scheduleAudioBufferSourceNode(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-        expect(convertToContextFrame).to.have.been.calledOnceWithExactly(context, timestamp);
+        expect(convertToContextFrame).to.have.been.calledOnceWith(context, timestamp);
     });
 
     it('should set the buffer property of the AudioBufferSourceNode', () => {
@@ -63,23 +62,23 @@ describe('scheduleAudioBufferSourceNode', () => {
     it('should call addEventListener() on the AudioBufferSourceNode', () => {
         scheduleAudioBufferSourceNode(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-        const listener = audioBufferSourceNode.addEventListener.getCall(0).args[1];
+        const listener = audioBufferSourceNode.addEventListener.mock.calls[0][1];
 
         expect(listener).to.be.a('function');
 
-        expect(audioBufferSourceNode.addEventListener).to.have.been.calledOnceWithExactly('ended', listener, { once: true });
+        expect(audioBufferSourceNode.addEventListener).to.have.been.calledOnceWith('ended', listener, { once: true });
     });
 
     it('should call connect() on the AudioBufferSourceNode with the given AudioWorkletNode', () => {
         scheduleAudioBufferSourceNode(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-        expect(audioBufferSourceNode.connect).to.have.been.calledOnceWithExactly(audioWorkletNode);
+        expect(audioBufferSourceNode.connect).to.have.been.calledOnceWith(audioWorkletNode);
     });
 
     it('should call start() on the AudioBufferSourceNode', () => {
         scheduleAudioBufferSourceNode(audioWorkletNode, context, createAudioBufferSourceNode, timingObject);
 
-        expect(audioBufferSourceNode.start).to.have.been.calledOnceWithExactly();
+        expect(audioBufferSourceNode.start).to.have.been.calledOnceWith();
     });
 
     it('should return a promise', () => {
@@ -89,11 +88,11 @@ describe('scheduleAudioBufferSourceNode', () => {
     });
 
     it('should resolve the promise when the listener gets called', async () => {
-        const onResolved = stub();
+        const onResolved = vi.fn();
 
         scheduleAudioBufferSourceNode(audioWorkletNode, context, createAudioBufferSourceNode, timingObject).then(onResolved);
 
-        const listener = audioBufferSourceNode.addEventListener.getCall(0).args[1];
+        const listener = audioBufferSourceNode.addEventListener.mock.calls[0][1];
 
         expect(onResolved).to.have.not.been.called;
 
@@ -103,6 +102,6 @@ describe('scheduleAudioBufferSourceNode', () => {
 
         await Promise.resolve();
 
-        expect(onResolved).to.have.been.calledOnceWithExactly(undefined);
+        expect(onResolved).to.have.been.calledOnceWith(undefined);
     });
 });

@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createConvertToContextFrame } from '../../../src/factories/convert-to-context-frame';
-import { stub } from 'sinon';
 
 describe('convertToContextFrame', () => {
     describe('without an available performance object', () => {
@@ -25,17 +24,17 @@ describe('convertToContextFrame', () => {
 
         beforeEach(() => {
             context = { currentTime: 20, sampleRate: 48000 };
-            performance = { now: stub() };
+            performance = { now: vi.fn() };
 
             convertToContextFrame = createConvertToContextFrame(performance);
 
-            performance.now.returns(40000);
+            performance.now.mockReturnValue(40000);
         });
 
         it('should call performance.now()', () => {
             convertToContextFrame(context, 30);
 
-            expect(performance.now).to.have.been.calledOnceWithExactly();
+            expect(performance.now).to.have.been.calledOnceWith();
         });
 
         it('should convert the timestamp to a frame on the timeline of the given context', () => {
